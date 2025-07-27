@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Paketat App</title>
+  </head>
+  <body>
+    <h1>Welcome to Paketat App</h1>
+  </body>
+</html>
