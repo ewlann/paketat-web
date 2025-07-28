@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="sq">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paketa Backend Demo</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f2f2f2; }
+      h1 { text-align: center; }
+      section { background: #fff; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+      label { display: block; margin-top: 10px; }
+      input { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; }
+      button { margin-top: 10px; padding: 10px 15px; background: #007bff; color: #fff; border-radius: 4px; border: none; cursor: pointer; }
+      button:hover { background: #0056b3; }
+      .message { margin-top: 10px; padding: 8px; border-radius: 4px; }
+      .success { background: #d4edda; color: #155724; }
+      .error { background: #f8d7da; color: #721c24; }
+      pre { background: #eee; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+  </head>
+  <body>
+    <h1>Paketa Backend Demo</h1>
+
+    <!-- Regjistrim -->
+    <section>
+      <h2>Regjistrim përdoruesi</h2>
+      <form id="registerForm">
+        <label>Username <input type="text" id="regUsername" required /></label>
+        <label>Password <input type="password" id="regPassword" required /></label>
+        <label>Biznes (opsionale) <input type="text" id="regBusiness" /></label>
+        <button type="submit">Regjistrohu</button>
+      </form>
+      <div id="registerMsg" class="message" style="display: none"></div>
+    </section>
+
+    <!-- Login -->
+    <section>
+      <h2>Login</h2>
+      <form id="loginForm">
+        <label>Username <input type="text" id="loginUsername" required /></label>
+        <label>Password <input type="password" id="loginPassword" required /></label>
+        <button type="submit">Login</button>
+      </form>
+      <div id="loginMsg" class="message" style="display: none"></div>
+    </section>
+
+    <!-- Krijo Paketë -->
+    <section>
+      <h2>Krijo Paketë</h2>
+      <form id="packageForm">
+        <label>Emri <input type="text" id="pkgEmri" required /></label>
+        <label>Mbiemri <input type="text" id="pkgMbiemri" required /></label>
+        <label>Adresa <input type="text" id="pkgAdresa" required /></label>
+        <label>Qyteti <input type="text" id="pkgQyteti" required /></label>
+        <label>Telefoni <input type="text" id="pkgTelefoni" required /></label>
+        <label>Email dërgues <input type="email" id="pkgEmailSender" required /></label>
+        <label>Email marrës <input type="email" id="pkgEmailReceiver" required /></label>
+        <label>Kg <input type="number" id="pkgKg" step="0.01" /></label>
+        <label>Çmimi <input type="number" id="pkgCmimi" step="0.01" /></label>
+        <label>Data <input type="date" id="pkgData" /></label>
+        <button type="submit">Krijo Paketë</button>
+      </form>
+      <div id="packageMsg" class="message" style="display: none"></div>
+    </section>
+
+    <!-- Gjurmim -->
+    <section>
+      <h2>Gjurmim Pakete</h2>
+      <form id="trackForm">
+        <label>Tracking ID <input type="text" id="trackIdInput" required /></label>
+        <button type="submit">Gjurmo</button>
+      </form>
+      <pre id="trackResult" style="display: none"></pre>
+    </section>
+
+    <script>
+      let authToken = null;
+      // funksione ndihmëse për mesazhet
+      function showMessage(el, msg, isError = false) {
+        el.style.display = 'block';
+        el.textContent = msg;
+        el.className = 'message ' + (isError ? 'error' : 'success');
+        setTimeout(() => { el.style.display = 'none'; }, 6000);
+      }
+      // regjistrim
+      document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('regUsername').value;
+        const password = document.getElementById('regPassword').value;
+        const business = document.getElementById('regBusiness').value;
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, business }),
+        });
+        const data = await res.json();
+        showMessage(document.getElementById('registerMsg'), res.ok ? 'Regjistrimi u krye!' : (data.error || 'Gabim'), !res.ok);
+      });
+      // login
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+        if (res.ok && data.token) {
+          authToken = data.token;
+          showMessage(document.getElementById('loginMsg'), 'Login i suksesshëm!');
+        } else {
+          showMessage(document.getElementById('loginMsg'), data.error || 'Kredencialet e pasakta', true);
+        }
+      });
+      // krijo paketë
+      document.getElementById('packageForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!authToken) {
+          showMessage(document.getElementById('packageMsg'), 'Hyni në sistem para se të krijoni paketa.', true);
+          return;
+        }
+        const body = {
+          emri: document.getElementById('pkgEmri').value,
+          mbiemri: document.getElementById('pkgMbiemri').value,
+          adresa: document.getElementById('pkgAdresa').value,
+          qyteti: document.getElementById('pkgQyteti').value,
+          telefoni: document.getElementById('pkgTelefoni').value,
+          emailSender: document.getElementById('pkgEmailSender').value,
+          emailReceiver: document.getElementById('pkgEmailReceiver').value,
+          kg: parseFloat(document.getElementById('pkgKg').value) || undefined,
+          cmimi: parseFloat(document.getElementById('pkgCmimi').value) || undefined,
+          data: document.getElementById('pkgData').value || undefined,
+        };
+        const res = await fetch('/api/packages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        showMessage(document.getElementById('packageMsg'), res.ok ? `Pako u krijua me Tracking ID: ${data.package.trackingId}` : (data.error || 'Gabim'), !res.ok);
+      });
+      // gjurmim
+      document.getElementById('trackForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const trackId = document.getElementById('trackIdInput').value.trim();
+        const res = await fetch(`/api/track/${trackId}`);
+        const data = await res.json();
+        if (res.ok) {
+          const pre = document.getElementById('trackResult');
+          pre.style.display = 'block';
+          pre.textContent = JSON.stringify(data, null, 2);
+        } else {
+          showMessage(document.getElementById('packageMsg'), data.error || 'Tracking ID i pasaktë', true);
+        }
+      });
+    </script>
+  </body>
+</html>
