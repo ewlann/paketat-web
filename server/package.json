@@ -1,0 +1,19 @@
+{
+  "name": "paketat-web-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.4.0",
+    "nodemailer": "^6.9.7",
+    "pdfkit": "^0.14.0",
+    "qrcode": "^1.5.1"
+  }
+}
