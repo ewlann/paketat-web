@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import QRCode from "qrcode.react";
-import axios from "axios";
+import QRCode from "react-qr-code";
 
-export default function RegisterForm() {
+const RegisterForm = () => {
   const [formData, setFormData] = useState({
     emri: "",
     mbiemri: "",
     adresa: "",
+    qyteti: "",
     telefoni: "",
     email: "",
   });
@@ -18,41 +18,77 @@ export default function RegisterForm() {
     setQrVisible(false);
   };
 
-  const handleGenerate = async () => {
-    try {
-      // 1. Dërgo të dhënat te serveri
-      const res = await axios.post("http://localhost:3001/register", formData);
-      console.log("Serveri ktheu:", res.data.message);
+  const handleGenerate = () => {
+    setQrVisible(true);
+  };
 
-      // 2. Trego QR Code
-      setQrVisible(true);
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/packages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      let result = {};
+      try {
+        result = await response.json();
+      } catch (e) {
+        result = { error: "Përgjigjja nuk ishte në format JSON" };
+      }
+
+      if (response.ok) {
+        alert("✅ Paketa u ruajt me sukses!");
+      } else {
+        alert("❌ Gabim gjatë ruajtjes: " + result.error);
+      }
     } catch (error) {
-      console.error("Gabim gjatë ruajtjes së paketës:", error);
+      alert("❌ Gabim rrjeti: " + error.message);
     }
   };
 
   const qrData = JSON.stringify(formData);
 
   return (
-    <div style={{ maxWidth: 800, margin: "auto", padding: 20 }}>
-      <h2 style={{ textAlign: "center" }}>Regjistrimi i Paketës</h2>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+    <div style={{ textAlign: "center", marginBottom: 20 }}>
+      <h2>📦 Regjistrimi i Paketës</h2>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 400, margin: "auto" }}>
         <input type="text" name="emri" placeholder="Emri" onChange={handleChange} />
         <input type="text" name="mbiemri" placeholder="Mbiemri" onChange={handleChange} />
-        <input type="text" name="adresa" placeholder="Adresa" onChange={handleChange} style={{ width: "100%" }} />
-        <input type="text" name="telefoni" placeholder="Nr Tel" onChange={handleChange} style={{ width: "100%" }} />
-        <input type="email" name="email" placeholder="Email" onChange={handleChange} style={{ width: "100%" }} />
+        <input type="text" name="adresa" placeholder="Adresa" onChange={handleChange} />
+        <input type="text" name="qyteti" placeholder="Qyteti" onChange={handleChange} />
+        <input type="text" name="telefoni" placeholder="Nr Telefoni" onChange={handleChange} />
+        <input type="email" name="email" placeholder="Email" onChange={handleChange} />
       </div>
 
-      <button onClick={handleGenerate} style={{ marginTop: 20, padding: "10px 20px", background: "black", color: "white", border: "none" }}>
-        Gjenero QR Code
-      </button>
+      <div style={{ marginTop: 20 }}>
+        <button
+          onClick={handleGenerate}
+          style={{ padding: "10px 20px", background: "black", color: "white", border: "none" }}
+        >
+          Gjenero QR Code
+        </button>
+      </div>
+
+      <div style={{ marginTop: 10 }}>
+        <button
+          onClick={handleSubmit}
+          style={{ padding: "10px 20px", background: "green", color: "white", border: "none" }}
+        >
+          Ruaj Paketën
+        </button>
+      </div>
 
       {qrVisible && (
         <div style={{ marginTop: 20 }}>
-          <QRCode value={qrData} size={180} />
+          <QRCode value={qrData} size={150} />
         </div>
       )}
     </div>
   );
-}
+};
+
+export default RegisterForm;
